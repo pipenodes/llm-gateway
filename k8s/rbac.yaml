@@ -1,0 +1,31 @@
+# ServiceAccount used by the gateway pods to discover Ollama backends via the K8s API.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hermes
+  namespace: hermes
+---
+# Permission to list/watch Services inside the namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hermes-discovery
+  namespace: hermes
+rules:
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hermes-discovery
+  namespace: hermes
+subjects:
+  - kind: ServiceAccount
+    name: hermes
+    namespace: hermes
+roleRef:
+  kind: Role
+  name: hermes-discovery
+  apiGroup: rbac.authorization.k8s.io

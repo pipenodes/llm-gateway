@@ -1,0 +1,13 @@
+{
+  "project": "hermes-llm-gateway",
+  "template": "cpp-backend",
+  "language": "cpp23",
+  "build_system": "make",
+  "rules": {
+    "specs_required": true,
+    "specs_format": "RF-XX",
+    "specs_path": "docs/spec/",
+    "audit_trail_required": true,
+    "dependencies_require_justification": true
+  }
+}

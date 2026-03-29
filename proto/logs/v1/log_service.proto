@@ -1,0 +1,229 @@
+syntax = "proto3";
+
+package hermes.logs.v1;
+
+option go_package = "github.com/pipeleap/hermes/gen/go/logs/v1;logsv1";
+option java_multiple_files = true;
+option java_package = "com.pipeleap.hermes.logs.v1";
+
+import "google/protobuf/any.proto";
+
+// ---------------------------------------------------------------------------
+// LogService — ingestao, consulta e tail de logs estruturados
+// ---------------------------------------------------------------------------
+
+service LogService {
+  // Ingestao em batch de logs estruturados.
+  // Retorna contagem de registros aceitos/rejeitados.
+  rpc Ingest(IngestLogsRequest) returns (IngestLogsResponse);
+
+  // Consulta de logs com filtros e paginacao.
+  rpc Query(QueryLogsRequest) returns (QueryLogsResponse);
+
+  // Stream em tempo real de novos logs (server-streaming).
+  // Envia heartbeat vazio a cada 30s quando nao ha novos registros.
+  rpc Tail(TailLogsRequest) returns (stream LogRecord);
+}
+
+// ---------------------------------------------------------------------------
+// Severity (alinhado com OpenTelemetry SeverityNumber)
+// ---------------------------------------------------------------------------
+
+enum SeverityNumber {
+  SEVERITY_NUMBER_UNSPECIFIED = 0;
+
+  SEVERITY_NUMBER_TRACE  = 1;
+  SEVERITY_NUMBER_TRACE2 = 2;
+  SEVERITY_NUMBER_TRACE3 = 3;
+  SEVERITY_NUMBER_TRACE4 = 4;
+
+  SEVERITY_NUMBER_DEBUG  = 5;
+  SEVERITY_NUMBER_DEBUG2 = 6;
+  SEVERITY_NUMBER_DEBUG3 = 7;
+  SEVERITY_NUMBER_DEBUG4 = 8;
+
+  SEVERITY_NUMBER_INFO  = 9;
+  SEVERITY_NUMBER_INFO2 = 10;
+  SEVERITY_NUMBER_INFO3 = 11;
+  SEVERITY_NUMBER_INFO4 = 12;
+
+  SEVERITY_NUMBER_WARN  = 13;
+  SEVERITY_NUMBER_WARN2 = 14;
+  SEVERITY_NUMBER_WARN3 = 15;
+  SEVERITY_NUMBER_WARN4 = 16;
+
+  SEVERITY_NUMBER_ERROR  = 17;
+  SEVERITY_NUMBER_ERROR2 = 18;
+  SEVERITY_NUMBER_ERROR3 = 19;
+  SEVERITY_NUMBER_ERROR4 = 20;
+
+  SEVERITY_NUMBER_FATAL  = 21;
+  SEVERITY_NUMBER_FATAL2 = 22;
+  SEVERITY_NUMBER_FATAL3 = 23;
+  SEVERITY_NUMBER_FATAL4 = 24;
+}
+
+// ---------------------------------------------------------------------------
+// Modelo de dados (OTel-compatible)
+// ---------------------------------------------------------------------------
+
+message AnyValue {
+  oneof value {
+    string string_value = 1;
+    bool   bool_value   = 2;
+    int64  int_value     = 3;
+    double double_value  = 4;
+    bytes  bytes_value   = 5;
+    ArrayValue  array_value  = 6;
+    KeyValueList kvlist_value = 7;
+  }
+}
+
+message ArrayValue {
+  repeated AnyValue values = 1;
+}
+
+message KeyValue {
+  string   key   = 1;
+  AnyValue value = 2;
+}
+
+message KeyValueList {
+  repeated KeyValue values = 1;
+}
+
+message Resource {
+  repeated KeyValue attributes = 1;
+}
+
+message InstrumentationScope {
+  string name    = 1;
+  string version = 2;
+}
+
+message LogRecord {
+  // UUID gerado pelo servidor se ausente.
+  string id = 1;
+
+  // Unix epoch nanoseconds — quando o evento ocorreu.
+  fixed64 timestamp = 2;
+
+  // Unix epoch nanoseconds — quando o gateway recebeu o registro.
+  fixed64 observed_timestamp = 3;
+
+  SeverityNumber severity_number = 4;
+  string         severity_text   = 5;
+
+  // Conteudo principal do log (texto ou JSON serializado).
+  string body = 6;
+
+  repeated KeyValue attributes = 7;
+
+  // Correlacao com distributed tracing (16 bytes).
+  bytes trace_id = 8;
+
+  // Correlacao com span (8 bytes).
+  bytes span_id = 9;
+
+  // OTel log record flags.
+  fixed32 flags = 10;
+}
+
+message ScopeLogs {
+  InstrumentationScope scope       = 1;
+  repeated LogRecord   log_records = 2;
+}
+
+message ResourceLogs {
+  Resource        resource   = 1;
+  repeated ScopeLogs scope_logs = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Ingest
+// ---------------------------------------------------------------------------
+
+message IngestLogsRequest {
+  repeated ResourceLogs resource_logs = 1;
+}
+
+message IngestLogsResponse {
+  // Quantidade de LogRecords aceitos.
+  int64 accepted = 1;
+
+  // Quantidade de LogRecords rejeitados por validacao.
+  int64 rejected = 2;
+
+  // Detalhes dos registros rejeitados.
+  repeated IngestError errors = 3;
+}
+
+message IngestError {
+  // Indice do LogRecord dentro do batch (global, flat).
+  int32  index   = 1;
+  string message = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Query
+// ---------------------------------------------------------------------------
+
+message QueryLogsRequest {
+  // Filtrar por service.name (resource attribute).
+  string service = 1;
+
+  // Severidade minima (registros com severity_number >= severity_min).
+  SeverityNumber severity_min = 2;
+
+  // Severidade maxima (registros com severity_number <= severity_max).
+  SeverityNumber severity_max = 3;
+
+  // Timestamp inicio (epoch nanoseconds, inclusive).
+  fixed64 from_timestamp = 4;
+
+  // Timestamp fim (epoch nanoseconds, inclusive).
+  fixed64 to_timestamp = 5;
+
+  // Substring match no body.
+  string body_contains = 6;
+
+  // Filtrar por trace_id (hex-encoded string).
+  string trace_id = 7;
+
+  // Filtros de atributo (key=value).
+  repeated KeyValue attribute_filters = 8;
+
+  // Ordem: "asc" ou "desc" (default: desc).
+  string order = 9;
+
+  // Max registros retornados (default: 100, max: 1000).
+  int32 limit = 10;
+
+  // Token de paginacao opaco retornado em QueryLogsResponse.
+  string cursor = 11;
+}
+
+message QueryLogsResponse {
+  repeated LogRecord log_records = 1;
+
+  // Total de registros que correspondem aos filtros (sem paginacao).
+  int64 total = 2;
+
+  // Token para a proxima pagina (vazio se nao ha mais resultados).
+  string next_cursor = 3;
+
+  bool has_more = 4;
+}
+
+// ---------------------------------------------------------------------------
+// Tail (server-streaming)
+// ---------------------------------------------------------------------------
+
+message TailLogsRequest {
+  // Filtros opcionais para o stream.
+  string         service      = 1;
+  SeverityNumber severity_min = 2;
+  string         body_contains = 3;
+  string         trace_id     = 4;
+  repeated KeyValue attribute_filters = 5;
+}

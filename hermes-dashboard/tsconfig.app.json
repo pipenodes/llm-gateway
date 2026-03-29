@@ -1,0 +1,80 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": "src",
+    "paths": {
+      "api/*": [
+        "api/*"
+      ],
+      "assets/*": [
+        "assets/*"
+      ],
+      "components/*": [
+        "components/*"
+      ],
+      "contexts/*": [
+        "contexts/*"
+      ],
+      "hooks/*": [
+        "hooks/*"
+      ],
+      "layout/*": [
+        "layout/*"
+      ],
+      "menu-items/*": [
+        "menu-items/*"
+      ],
+      "pages/*": [
+        "pages/*"
+      ],
+      "routes/*": [
+        "routes/*"
+      ],
+      "themes/*": [
+        "themes/*"
+      ],
+      "types/*": [
+        "types/*"
+      ],
+      "utils/*": [
+        "utils/*"
+      ],
+      "config": [
+        "config.ts"
+      ],
+      "locales/*": [
+        "locales/*"
+      ],
+      "i18n": [
+        "i18n.ts"
+      ],
+      "test/*": [
+        "test/*"
+      ],
+      "lib/*": [
+        "lib/*"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ]
+}

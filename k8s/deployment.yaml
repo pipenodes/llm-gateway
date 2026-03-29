@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes
+  namespace: pipeleap
+  labels:
+    app: hermes
+    app.kubernetes.io/component: gateway
+    pipeleap/product: llm-gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hermes
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: hermes
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: hermes
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: hermes
+          image: pipeleap/llm-gateway:2.0
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: metrics
+              containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: hermes-config
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pipeleap-secrets
+                  key: OPENAI_API_KEY
+                  optional: true
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pipeleap-secrets
+                  key: OPENROUTER_API_KEY
+                  optional: true
+            - name: PIPELEAP_LICENSE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pipeleap-secrets
+                  key: PIPELEAP_LICENSE_KEY
+                  optional: true
+          volumeMounts:
+            - name: plugins
+              mountPath: /plugins/enterprise
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            failureThreshold: 3
+      volumes:
+        - name: plugins
+          persistentVolumeClaim:
+            claimName: hermes-plugins

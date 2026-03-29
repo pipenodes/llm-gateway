@@ -1,0 +1,35 @@
+{
+  "gateway": { "port": 8080, "host": "0.0.0.0" },
+  "ollama": { "url": "http://localhost:11434" },
+  "model_aliases": {
+    "gpt-4": "gemma3:1b",
+    "text-embedding-3-small": "nomic-embed-text"
+  },
+  "cache": {
+    "enabled": true,
+    "ttl": 300,
+    "max_entries": 1000,
+    "max_memory_mb": 128
+  },
+  "queue": { "enabled": false },
+  "plugins": {
+    "enabled": true,
+    "pipeline": [
+      { "name": "logging", "enabled": true },
+      { "name": "semantic_cache", "enabled": true, "config": { "threshold": 0.9, "max_entries": 500, "embedding_model": "nomic-embed-text" } },
+      { "name": "pii_redactor", "enabled": true },
+      { "name": "content_moderation", "enabled": true, "config": { "check_input": false, "check_output": false } },
+      { "name": "prompt_injection", "enabled": true },
+      { "name": "response_validator", "enabled": true },
+      { "name": "rag_injector", "enabled": true },
+      { "name": "cost_controller", "enabled": true, "config": { "default_budget": 0 } },
+      { "name": "request_router", "enabled": true },
+      { "name": "conversation_memory", "enabled": true },
+      { "name": "adaptive_rate_limiter", "enabled": true },
+      { "name": "streaming_transformer", "enabled": true },
+      { "name": "api_versioning", "enabled": true },
+      { "name": "request_dedup", "enabled": true },
+      { "name": "model_warmup", "enabled": true }
+    ]
+  }
+}

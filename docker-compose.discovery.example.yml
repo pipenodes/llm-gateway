@@ -1,0 +1,76 @@
+# Docker Compose example with dynamic discovery via Docker labels.
+# The gateway discovers backends automatically from container labels.
+#
+# Usage:
+#   docker compose -f docker-compose.discovery.example.yml up -d
+
+services:
+  hermes:
+    build: .
+    ports:
+      - "8080:8080"
+    container_name: hermes
+    restart: unless-stopped
+    environment:
+      - ADMIN_KEY=your-admin-secret
+      - ADMIN_IP_WHITELIST=0.0.0.0/0
+      - CORS_ORIGIN=*
+      - DISCOVERY_DOCKER_ENABLED=true
+      - DISCOVERY_FILE_ENABLED=true
+      - DISCOVERY_FILE_PATHS=/app/data/dynamic/
+    volumes:
+      - gateway-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./dynamic-config/:/app/data/dynamic/:ro
+
+  # Ollama GPU node 1 — discovered via Docker labels
+  ollama-gpu1:
+    image: ollama/ollama:latest
+    container_name: ollama-gpu1
+    restart: unless-stopped
+    labels:
+      hermes.enable: "true"
+      hermes.provider.name: "ollama-gpu1"
+      hermes.provider.type: "ollama"
+      hermes.provider.port: "11434"
+      hermes.provider.models: "llama3:8b,qwen3:8b,gemma3:4b"
+      hermes.provider.default-model: "llama3:8b"
+      hermes.provider.weight: "10"
+    volumes:
+      - ollama-gpu1-data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Ollama GPU node 2 — discovered via Docker labels
+  ollama-gpu2:
+    image: ollama/ollama:latest
+    container_name: ollama-gpu2
+    restart: unless-stopped
+    labels:
+      hermes.enable: "true"
+      hermes.provider.name: "ollama-gpu2"
+      hermes.provider.type: "ollama"
+      hermes.provider.port: "11434"
+      hermes.provider.models: "llama3:70b"
+      hermes.provider.default-model: "llama3:70b"
+      hermes.provider.weight: "5"
+      hermes.model-routing.llama3-70b: "ollama-gpu2"
+    volumes:
+      - ollama-gpu2-data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  gateway-data:
+  ollama-gpu1-data:
+  ollama-gpu2-data:

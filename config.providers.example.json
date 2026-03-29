@@ -1,0 +1,38 @@
+{
+  "gateway": { "port": 8080, "host": "0.0.0.0" },
+  "ollama": { "url": "http://localhost:11434" },
+  "providers": {
+    "ollama": {
+      "enabled": true,
+      "default_model": "llama3:8b",
+      "backends": ["http://localhost:11434"]
+    },
+    "openrouter": {
+      "enabled": false,
+      "default_model": "openai/gpt-4o-mini",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY"
+    },
+    "custom": {
+      "enabled": false,
+      "id": "custom-openai",
+      "base_url": "https://api.openai.com/v1",
+      "api_key_env": "OPENAI_API_KEY",
+      "default_model": "gpt-4"
+    }
+  },
+  "model_routing": {
+    "gpt-4": "custom",
+    "gpt-4o": "custom",
+    "gpt-3.5-turbo": "custom",
+    "llama3:8b": "ollama",
+    "qwen3:8b": "ollama"
+  },
+  "fallback_chain": ["ollama", "openrouter", "custom"],
+  "model_aliases": {
+    "gpt-4": "qwen3:8b",
+    "gpt-3.5-turbo": "gemma3:4b"
+  },
+  "cache": { "enabled": false, "ttl": 300, "max_entries": 1000, "max_memory_mb": 128 },
+  "docs": { "enabled": false }
+}

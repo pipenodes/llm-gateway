@@ -1,0 +1,41 @@
+# Dynamic Provider Discovery Configuration (File Provider)
+# Place this file at the path configured in discovery.file.paths
+# Changes are detected automatically via polling (hot reload).
+
+backends:
+  ollama-gpu1:
+    type: ollama
+    url: http://10.0.0.5:11434
+    default_model: llama3:8b
+    models: [llama3:8b, qwen3:8b, gemma3:4b]
+    weight: 10
+
+  ollama-gpu2:
+    type: ollama
+    url: http://10.0.0.6:11434
+    default_model: llama3:8b
+    models: [llama3:8b, llama3:70b]
+    weight: 5
+
+  openrouter:
+    type: openai
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY
+    default_model: openai/gpt-4o-mini
+    models: [openai/gpt-4o, openai/gpt-4o-mini, anthropic/claude-3.5-sonnet]
+
+model_routing:
+  gpt-4: openrouter
+  gpt-4o: openrouter
+  claude-3.5-sonnet: openrouter
+  llama3:8b: ollama-gpu1
+  llama3:70b: ollama-gpu2
+
+fallback_chain:
+  - ollama-gpu1
+  - ollama-gpu2
+  - openrouter
+
+model_aliases:
+  gpt-3.5-turbo: llama3:8b
+  gpt-4-turbo: openai/gpt-4o

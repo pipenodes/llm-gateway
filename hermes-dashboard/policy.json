@@ -1,0 +1,21 @@
+{
+  "template": "react-vite-mui",
+  "version": "pro",
+  "rules": {
+    "mui_required": true,
+    "tailwind_forbidden": true,
+    "manual_pro_deps": true,
+    "dependencies_require_justification": true
+  },
+  "forbidden_imports": [
+    "tailwindcss"
+  ],
+  "allowed_pro_imports": [
+    "@mui/x-data-grid-pro",
+    "@mui/x-data-grid-premium",
+    "@mui/x-date-pickers-pro",
+    "@mui/x-charts-pro",
+    "@mui/x-tree-view-pro"
+  ],
+  "notes": "Template MUI Pro - dependencias PRO devem ser adicionadas manualmente pelo usuario"
+}

@@ -1,0 +1,393 @@
+openapi: "3.0.3"
+info:
+  title: HERMES Log Ingestion & Query API
+  description: |
+    Contrato REST para ingestao e consulta de logs estruturados no HERMES.
+    Modelo de dados alinhado com OpenTelemetry Logs.
+    Referencia: RF-31-FUNCIONAL.md
+  version: "1.0.0"
+
+servers:
+  - url: /
+    description: HERMES Gateway
+
+tags:
+  - name: Logs
+    description: Ingestao e consulta de logs estruturados
+
+paths:
+  /v1/logs:
+    post:
+      tags: [Logs]
+      summary: Ingestao de logs em batch
+      operationId: ingestLogs
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestLogsRequest"
+            example:
+              resource_logs:
+                - resource:
+                    attributes:
+                      service.name: my-app
+                      host.name: node-01
+                  scope_logs:
+                    - scope:
+                        name: my-app.auth
+                        version: "1.0.0"
+                      log_records:
+                        - timestamp: 1742198400000000000
+                          severity_number: 9
+                          severity_text: INFO
+                          body: "User login successful"
+                          attributes:
+                            user.id: u-123
+                            action: login
+                          trace_id: "0af7651916cd43dd8448eb211c80319c"
+                          span_id: "b7ad6b7169203331"
+      responses:
+        "202":
+          description: Todos os registros aceitos
+          headers:
+            X-Request-Id:
+              schema: { type: string, format: uuid }
+            X-Accepted-Count:
+              schema: { type: integer }
+            X-Rejected-Count:
+              schema: { type: integer }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestLogsResponse"
+        "207":
+          description: Sucesso parcial (alguns registros rejeitados)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestLogsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          description: Batch excede max_batch_size ou body excede max_body_size_bytes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Buffer cheio (backpressure) — retry com backoff
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      tags: [Logs]
+      summary: Consulta de logs com filtros
+      operationId: queryLogs
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: service
+          in: query
+          schema: { type: string }
+          description: Filtrar por service.name
+        - name: severity_min
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 24 }
+          description: Severidade minima (1-24, OTel SeverityNumber)
+        - name: severity_max
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 24 }
+          description: Severidade maxima (1-24, OTel SeverityNumber)
+        - name: from
+          in: query
+          schema: { type: integer, format: int64 }
+          description: Timestamp inicio (epoch nanoseconds)
+        - name: to
+          in: query
+          schema: { type: integer, format: int64 }
+          description: Timestamp fim (epoch nanoseconds)
+        - name: body_contains
+          in: query
+          schema: { type: string }
+          description: Substring match no body do log
+        - name: trace_id
+          in: query
+          schema: { type: string }
+          description: Filtrar por trace_id (hex-encoded)
+        - name: attribute
+          in: query
+          schema: { type: string }
+          description: "Filtro de atributo no formato key=value (repetivel)"
+          style: form
+          explode: true
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Ordem dos resultados
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 100 }
+          description: Max registros retornados
+        - name: cursor
+          in: query
+          schema: { type: string }
+          description: Token de paginacao opaco (base64)
+      responses:
+        "200":
+          description: Logs encontrados
+          headers:
+            X-Request-Id:
+              schema: { type: string, format: uuid }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryLogsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/logs/{id}:
+    get:
+      tags: [Logs]
+      summary: Obter log individual por ID
+      operationId: getLogById
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+          description: UUID do log record
+      responses:
+        "200":
+          description: Log encontrado
+          headers:
+            X-Request-Id:
+              schema: { type: string, format: uuid }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogRecordFlat"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Log nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    # -- Ingest --
+
+    IngestLogsRequest:
+      type: object
+      required: [resource_logs]
+      properties:
+        resource_logs:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ResourceLogs"
+
+    ResourceLogs:
+      type: object
+      properties:
+        resource:
+          $ref: "#/components/schemas/Resource"
+        scope_logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScopeLogs"
+
+    Resource:
+      type: object
+      properties:
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            service.name: my-app
+            host.name: node-01
+
+    ScopeLogs:
+      type: object
+      properties:
+        scope:
+          $ref: "#/components/schemas/InstrumentationScope"
+        log_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/LogRecordInput"
+
+    InstrumentationScope:
+      type: object
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+
+    LogRecordInput:
+      type: object
+      required: [timestamp, severity_number, body]
+      properties:
+        timestamp:
+          type: integer
+          format: int64
+          description: Unix epoch nanoseconds
+        severity_number:
+          type: integer
+          minimum: 1
+          maximum: 24
+          description: "OTel SeverityNumber (1=TRACE, 9=INFO, 13=WARN, 17=ERROR, 21=FATAL)"
+        severity_text:
+          type: string
+          description: "Texto legivel (INFO, ERROR, etc.)"
+        body:
+          type: string
+          description: Conteudo principal do log
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+          description: Metadata estruturada (key-value)
+        trace_id:
+          type: string
+          description: "Trace ID hex-encoded (32 chars)"
+          pattern: "^[0-9a-f]{32}$"
+        span_id:
+          type: string
+          description: "Span ID hex-encoded (16 chars)"
+          pattern: "^[0-9a-f]{16}$"
+
+    IngestLogsResponse:
+      type: object
+      properties:
+        accepted:
+          type: integer
+          description: Registros aceitos
+        rejected:
+          type: integer
+          description: Registros rejeitados
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestError"
+
+    IngestError:
+      type: object
+      properties:
+        index:
+          type: integer
+          description: Indice do registro rejeitado (posicao flat no batch)
+        message:
+          type: string
+          description: Motivo da rejeicao
+
+    # -- Query --
+
+    QueryLogsResponse:
+      type: object
+      properties:
+        log_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/LogRecordFlat"
+        total:
+          type: integer
+          format: int64
+          description: Total de registros que correspondem aos filtros
+        next_cursor:
+          type: string
+          description: Token para a proxima pagina (vazio se nao ha mais)
+        has_more:
+          type: boolean
+
+    LogRecordFlat:
+      type: object
+      description: Representacao flat de um LogRecord para response
+      properties:
+        id:
+          type: string
+          format: uuid
+        timestamp:
+          type: integer
+          format: int64
+        observed_timestamp:
+          type: integer
+          format: int64
+        severity_number:
+          type: integer
+        severity_text:
+          type: string
+        body:
+          type: string
+        resource:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Atributos do resource (service.name, host.name, ...)"
+        scope:
+          $ref: "#/components/schemas/InstrumentationScope"
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+        trace_id:
+          type: string
+        span_id:
+          type: string
+
+    # -- Common --
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+  responses:
+    BadRequest:
+      description: Requisicao invalida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Autenticacao invalida ou ausente
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

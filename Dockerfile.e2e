@@ -1,0 +1,30 @@
+# E2E tests: build and run inside Docker (no gtest/CMake on host needed)
+FROM debian:12-slim
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    libgtest-dev \
+    libjsoncpp-dev \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build gtest (Debian only installs sources)
+RUN cd /usr/src/gtest && cmake . && make && cp lib/*.a /usr/lib && cd / && rm -rf /usr/src/gtest
+
+WORKDIR /build
+COPY . /build
+
+RUN wget -q https://raw.githubusercontent.com/yhirose/cpp-httplib/v0.34.0/httplib.h -O src/httplib.h
+
+RUN g++ -std=c++17 -Wall -Wextra -g -O0 -Isrc -I/usr/include/jsoncpp \
+    -c scripts/e2e-core-with-plugins/e2e_core_plugins_test.cpp \
+    -o scripts/e2e-core-with-plugins/e2e_core_plugins_test.o \
+    && g++ scripts/e2e-core-with-plugins/e2e_core_plugins_test.o -o e2e_core_plugins_test \
+    -lgtest -lgtest_main -lpthread -ljsoncpp
+
+# Gateway URL by service name when run with docker compose
+ENV GATEWAY_URL=http://hermes:8080
+ENV ADMIN_KEY=your-admin-secret
+
+CMD ["./e2e_core_plugins_test"]

@@ -1,0 +1,143 @@
+{
+  "plugins": {
+    "enabled": true,
+
+    "_pipeline_order_note": "Ordem mandatoria do Security Pipeline (RF-32/34/33/35): guardrails → data_discovery → dlp → finops. Nao reordenar esses quatro sem ler as specs em docs/specs/.",
+
+    "pipeline": [
+
+      {
+        "_section": "--- Infraestrutura base ---",
+        "name": "logging",
+        "enabled": true,
+        "config": {}
+      },
+      {
+        "name": "audit",
+        "enabled": true,
+        "config": {
+          "output": "file",
+          "path": "audit/",
+          "queue_max_entries": 10000,
+          "syslog_host": null,
+          "syslog_port": 514,
+          "syslog_protocol": "udp",
+          "syslog_facility": 16,
+          "syslog_severity": 6,
+          "syslog_app_name": "hermes"
+        }
+      },
+      {
+        "name": "alerting",
+        "enabled": false,
+        "config": {
+          "webhook_url": "https://example.com/webhook",
+          "window_seconds": 300,
+          "status_4xx_limit": 10,
+          "alert_on_blocked": true
+        }
+      },
+
+      {
+        "_section": "--- Cache (antes do Security Pipeline para evitar custo de classificacao em hits) ---",
+        "name": "semantic_cache",
+        "enabled": true,
+        "config": {
+          "threshold": 0.95,
+          "max_entries": 5000,
+          "ttl_seconds": 3600,
+          "embedding_model": "nomic-embed-text",
+          "only_temperature_zero": true
+        }
+      },
+
+      {
+        "_section": "--- Security Pipeline (ordem mandatoria: RF-32 → RF-34 → RF-33 → RF-35) ---",
+        "name": "guardrails",
+        "enabled": false,
+        "_spec": "docs/specs/RF-32-FUNCIONAL.md",
+        "_tier": "enterprise",
+        "_requires": "gateway core popula ctx.metadata[tenant_id/app_id] — ver docs/specs/RF-10-ADENDO-TENANT-CTX.md",
+        "config": {
+          "default_policy": {
+            "l1": {
+              "max_payload_bytes": 1048576,
+              "allow_models": [],
+              "deny_models": [],
+              "rate_limit": { "requests_per_minute": 60, "burst": 10 },
+              "block_threshold": 0.7,
+              "trusted_client_ids": []
+            },
+            "l2": { "enabled": false, "sample_rate": 0.5, "toxicity_threshold": 0.8, "jailbreak_threshold": 0.7 },
+            "l3": { "enabled": false, "sample_rate": 0.05, "judge_model": "llama3:8b" }
+          },
+          "tenant_policies": {}
+        }
+      },
+      {
+        "name": "data_discovery",
+        "enabled": false,
+        "_spec": "docs/specs/RF-34-FUNCIONAL.md",
+        "_tier": "enterprise",
+        "_must_precede": "dlp",
+        "config": {
+          "catalog_path": "data/discovery-catalog",
+          "flush_interval_seconds": 300,
+          "global_rules": [
+            { "kind": "regex", "pattern": "\\b\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}\\b", "tags": ["pii"] },
+            { "kind": "regex", "pattern": "\\b[A-Z]\\d{2}(?:\\.\\d)?\\b",           "tags": ["phi"] },
+            { "kind": "regex", "pattern": "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b", "tags": ["pci"] }
+          ],
+          "tenant_rules": {},
+          "shadow_ai": {
+            "enabled": true,
+            "allowed_endpoints_by_tenant": {},
+            "allowed_models_by_tenant": {}
+          }
+        }
+      },
+      {
+        "name": "dlp",
+        "enabled": false,
+        "_spec": "docs/specs/RF-33-FUNCIONAL.md",
+        "_tier": "enterprise",
+        "_must_follow": "data_discovery",
+        "config": {
+          "audit_path": "data/dlp-audit",
+          "quarantine_path": "data/dlp-quarantine",
+          "default_policy": {
+            "type_policies": [
+              { "data_type": "pii", "action": "redact",     "confidence_threshold": 0.8 },
+              { "data_type": "phi", "action": "block",      "confidence_threshold": 0.7 },
+              { "data_type": "pci", "action": "quarantine", "confidence_threshold": 0.9 }
+            ],
+            "log_detections": true,
+            "audit_trail": true
+          },
+          "tenant_policies": {}
+        }
+      },
+      {
+        "name": "finops",
+        "enabled": false,
+        "_spec": "docs/specs/RF-35-FUNCIONAL.md",
+        "_tier": "enterprise",
+        "config": {
+          "persist_path": "data/finops-costs.json",
+          "flush_interval_seconds": 60,
+          "pricing": {
+            "gpt-4o":            { "input_per_1k": 0.0025, "output_per_1k": 0.01   },
+            "gpt-3.5-turbo":     { "input_per_1k": 0.0005, "output_per_1k": 0.0015 },
+            "llama3:8b":         { "input_per_1k": 0.0,    "output_per_1k": 0.0    },
+            "claude-3.5-sonnet": { "input_per_1k": 0.003,  "output_per_1k": 0.015  }
+          },
+          "tenant_budgets": {},
+          "app_budgets": {},
+          "key_budgets": {}
+        }
+      }
+
+    ],
+    "dynamic_plugins_dir": "plugins/"
+  }
+}

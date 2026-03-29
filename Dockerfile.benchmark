@@ -1,0 +1,48 @@
+# Benchmark models: build and run inside Docker
+FROM debian:12-slim
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    libgtest-dev \
+    libjsoncpp-dev \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN cd /usr/src/gtest && cmake . && make && cp lib/*.a /usr/lib && cd / && rm -rf /usr/src/gtest
+
+WORKDIR /build
+COPY . /build
+
+RUN wget -q https://raw.githubusercontent.com/yhirose/cpp-httplib/v0.34.0/httplib.h -O src/httplib.h
+
+RUN g++ -std=c++17 -Wall -Wextra -g -O0 -Isrc -Iscripts/benchmark-models -I/usr/include/jsoncpp \
+    -c scripts/benchmark-models/benchmark_models_test.cpp -o scripts/benchmark-models/benchmark_models_test.o \
+    && g++ -std=c++17 -Wall -Wextra -g -O0 -Isrc -Iscripts/benchmark-models -I/usr/include/jsoncpp \
+    -c scripts/benchmark-models/prompts.cpp -o scripts/benchmark-models/prompts.o \
+    && g++ scripts/benchmark-models/benchmark_models_test.o scripts/benchmark-models/prompts.o \
+    -o benchmark_models_test -lgtest -lgtest_main -lpthread -ljsoncpp
+
+RUN g++ -std=c++17 -Wall -Wextra -g -O0 -Isrc -Iscripts/benchmark-models -I/usr/include/jsoncpp \
+    -c scripts/benchmark-models/benchmark_suite_test.cpp -o scripts/benchmark-models/benchmark_suite_test.o \
+    && g++ -std=c++17 -Wall -Wextra -g -O0 -Isrc -Iscripts/benchmark-models -I/usr/include/jsoncpp \
+    -c scripts/benchmark-models/scoring/expected_answers.cpp -o scripts/benchmark-models/scoring/expected_answers.o \
+    && g++ -std=c++17 -Wall -Wextra -g -O0 -Isrc -Iscripts/benchmark-models -I/usr/include/jsoncpp \
+    -c scripts/benchmark-models/scoring/math_validator.cpp -o scripts/benchmark-models/scoring/math_validator.o \
+    && g++ -std=c++17 -Wall -Wextra -g -O0 -Isrc -Iscripts/benchmark-models -I/usr/include/jsoncpp \
+    -c scripts/benchmark-models/scoring/logic_validator.cpp -o scripts/benchmark-models/scoring/logic_validator.o \
+    && g++ -std=c++17 -Wall -Wextra -g -O0 -Isrc -Iscripts/benchmark-models -I/usr/include/jsoncpp \
+    -c scripts/benchmark-models/scoring/score_utils.cpp -o scripts/benchmark-models/scoring/score_utils.o \
+    && g++ scripts/benchmark-models/benchmark_suite_test.o scripts/benchmark-models/prompts.o \
+    scripts/benchmark-models/scoring/expected_answers.o scripts/benchmark-models/scoring/math_validator.o \
+    scripts/benchmark-models/scoring/logic_validator.o scripts/benchmark-models/scoring/score_utils.o \
+    -o benchmark_suite_test -lgtest -lgtest_main -lpthread -ljsoncpp
+
+RUN mkdir -p /app /app/reports && cp /build/benchmark_suite_test /app/
+WORKDIR /app
+ENV GATEWAY_URL=http://hermes:8080
+ENV API_KEY=your-secret-key
+ENV REPORT_DIR=/app/reports
+
+# Mount ./benchmark-reports to /app/reports to get report-xxxx.json, .csv, .md, report_questions_and_answers.txt
+CMD ["./benchmark_suite_test"]

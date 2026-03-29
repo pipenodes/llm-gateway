@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes
+  namespace: hermes
+  labels:
+    app.kubernetes.io/name: hermes
+    app.kubernetes.io/component: gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes
+    spec:
+      serviceAccountName: hermes
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: gateway
+          image: hermes:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-secrets
+                  key: API_KEY
+            - name: ADMIN_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-secrets
+                  key: ADMIN_KEY
+            - name: ADMIN_IP_WHITELIST
+              value: "0.0.0.0/0"
+            - name: CORS_ORIGIN
+              value: "*"
+            - name: MAX_PAYLOAD_MB
+              value: "4"
+            # Cache
+            - name: CACHE_ENABLED
+              value: "true"
+            - name: CACHE_TTL
+              value: "300"
+            - name: CACHE_MAX_ENTRIES
+              value: "1000"
+            - name: CACHE_MAX_MEMORY_MB
+              value: "128"
+            # Queue
+            - name: QUEUE_ENABLED
+              value: "true"
+            - name: QUEUE_MAX_CONCURRENCY
+              value: "8"
+            - name: QUEUE_MAX_SIZE
+              value: "1000"
+            - name: RATE_LIMIT
+              value: "0"
+            - name: DOCS_ENABLED
+              value: "true"
+            # Discovery — Kubernetes + File providers
+            - name: DISCOVERY_K8S_ENABLED
+              value: "true"
+            - name: DISCOVERY_K8S_NAMESPACE
+              value: "hermes"
+            - name: DISCOVERY_K8S_POLL_INTERVAL
+              value: "10"
+            - name: DISCOVERY_FILE_ENABLED
+              value: "true"
+            - name: DISCOVERY_FILE_PATHS
+              value: "/app/data/dynamic/"
+            - name: DISCOVERY_FILE_POLL_INTERVAL
+              value: "5"
+            # Fallback Ollama
+            - name: OLLAMA_URL
+              value: "http://ollama-default.hermes.svc.cluster.local:11434"
+          volumeMounts:
+            - name: dynamic-config
+              mountPath: /app/data/dynamic/
+              readOnly: true
+            - name: data
+              mountPath: /app/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+      volumes:
+        - name: dynamic-config
+          configMap:
+            name: hermes-dynamic-config
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes
+  namespace: hermes
+  labels:
+    app.kubernetes.io/name: hermes
+    app.kubernetes.io/component: gateway
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: hermes
+---
+# Optional: expose externally via LoadBalancer (or use an Ingress instead).
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: hermes-lb
+#   namespace: hermes
+# spec:
+#   type: LoadBalancer
+#   ports:
+#     - name: http
+#       port: 80
+#       targetPort: http
+#   selector:
+#     app.kubernetes.io/name: hermes

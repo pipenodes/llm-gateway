@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hermes-config
+  namespace: pipeleap
+data:
+  HERMES_HOST: "0.0.0.0"
+  HERMES_PORT: "8080"
+  HERMES_METRICS_PORT: "8081"
+  HERMES_LOG_LEVEL: info
+  PIPELEAP_PIPENODES_URL: http://pipenodes:8103
+  PIPELEAP_MARKETPLACE_URL: http://marketplace:8102
+  PIPELEAP_ENTERPRISE_PLUGIN_DIR: /plugins/enterprise
+  PIPELEAP_MANAGED: "1"

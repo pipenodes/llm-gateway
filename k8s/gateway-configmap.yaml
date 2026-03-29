@@ -1,0 +1,29 @@
+# Optional file-based dynamic config (hot reload).
+# Mounted at /app/data/dynamic/ inside the gateway pod.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hermes-dynamic-config
+  namespace: hermes
+data:
+  dynamic.yaml: |
+    backends:
+      openrouter:
+        type: openai
+        base_url: https://openrouter.ai/api/v1
+        api_key_env: OPENROUTER_API_KEY
+        default_model: openai/gpt-4o-mini
+        models: [openai/gpt-4o, openai/gpt-4o-mini, anthropic/claude-3.5-sonnet]
+
+    model_routing:
+      gpt-4: openrouter
+      gpt-4o: openrouter
+      claude-3.5-sonnet: openrouter
+
+    model_aliases:
+      gpt-3.5-turbo: llama3:8b
+      gpt-4-turbo: openai/gpt-4o
+
+    fallback_chain:
+      - ollama-default
+      - openrouter

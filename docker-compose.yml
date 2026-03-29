@@ -1,0 +1,72 @@
+services:
+  hermes:
+    build: .
+    ports:
+      - "8080:8080"
+    container_name: hermes
+    restart: unless-stopped
+    environment:
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - API_KEY=your-secret-key
+      - RATE_LIMIT=0
+      - MODEL_ALIASES=gpt-4=qwen3:8b,gpt-3.5-turbo=gemma3:4b
+      - CACHE_ENABLED=true
+      - CACHE_TTL=300
+      - CACHE_MAX_ENTRIES=1000
+      - CACHE_MAX_MEMORY_MB=128
+      - ADMIN_KEY=your-admin-secret
+      - ADMIN_IP_WHITELIST=0.0.0.0/0
+      - DOCS_ENABLED=true
+      - CORS_ORIGIN=*
+      - MAX_PAYLOAD_MB=4
+      - QUEUE_ENABLED=true
+      - QUEUE_MAX_CONCURRENCY=4
+      - QUEUE_MAX_SIZE=500
+      # Discovery: uncomment to enable dynamic provider discovery
+      # - DISCOVERY_DOCKER_ENABLED=true
+      # - DISCOVERY_FILE_ENABLED=true
+      # - DISCOVERY_FILE_PATHS=/app/data/dynamic/
+    volumes:
+      - gateway-data:/app/data
+      # Mount Docker socket for Docker discovery provider
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  e2e-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e
+    depends_on:
+      - hermes
+    environment:
+      - GATEWAY_URL=http://hermes:8080
+      - ADMIN_KEY=your-admin-secret
+    # Rodar: docker compose run e2e-test
+
+  benchmark-models:
+    build:
+      context: .
+      dockerfile: Dockerfile.benchmark
+    depends_on:
+      - hermes
+    environment:
+      - GATEWAY_URL=http://hermes:8080
+      - API_KEY=your-secret-key
+      - REPORT_DIR=/app/reports
+    volumes:
+      - ./benchmark-reports:/app/reports
+    # Config: edite benchmark-reports/benchmark_config.json (provider + models) e rode de novo — sem rebuild.
+    # Rodar: docker compose run --rm benchmark-models
+
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama
+  #   ports:
+  #     - "11435:11434"
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ollama-data:/root/.ollama
+
+volumes:
+  gateway-data:
+
+  # ollama-data:

@@ -1,0 +1,49 @@
+version: 2
+updates:
+  # Dependências npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 10
+    groups:
+      # Agrupa MUI em um único PR
+      mui:
+        patterns:
+          - "@mui/*"
+      # Agrupa Storybook em um único PR
+      storybook:
+        patterns:
+          - "storybook"
+          - "@storybook/*"
+      # Agrupa ferramentas de teste
+      testing:
+        patterns:
+          - "@testing-library/*"
+          - "vitest"
+          - "@vitest/*"
+          - "@playwright/*"
+      # Agrupa Vite e plugins
+      vite:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "vite-*"
+    ignore:
+      # Evita major version bumps automáticos (revisar manualmente)
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@mui/material"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"

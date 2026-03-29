@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <title>App</title>
+  <link rel="icon" href="/favicon.svg" />
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1677ff" />
+
+  <!-- CSP — Content Security Policy (T9) -->
+  <!-- Ajuste as diretivas conforme os domínios reais usados em produção -->
+  <meta http-equiv="Content-Security-Policy"
+    content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com data:;
+      img-src 'self' data: blob: https://api.dicebear.com;
+      connect-src 'self' https:;
+      frame-ancestors 'none';
+      base-uri 'self';
+      form-action 'self';
+    " />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!--
+    FOUC Prevention — RF-00-UX-DEFAULT-DARKMODE
+    Reads localStorage key "theme" (values: "light" | "dark" | "system")
+    Sets data-color-scheme on <html> before React hydrates (prevents flash of wrong theme).
+  -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var isDark = stored === 'dark' || (stored === 'system' && prefersDark) || (!stored && prefersDark);
+        document.documentElement.setAttribute('data-color-scheme', isDark ? 'dark' : 'light');
+      } catch (e) { /* localStorage blocked */ }
+    })();
+  </script>
+</head>
+
+<body>
+  <noscript>Você precisa habilitar o JavaScript para executar este aplicativo.</noscript>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

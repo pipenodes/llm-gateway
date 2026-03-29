@@ -1,0 +1,137 @@
+# Production-ready Docker Compose with dynamic discovery.
+#
+# The gateway discovers Ollama backends automatically via Docker labels
+# and supports additional config via YAML files in ./dynamic-config/.
+#
+# Features:
+#   - Docker label discovery (auto-detect Ollama containers)
+#   - File-based dynamic config (hot reload from ./dynamic-config/)
+#   - Horizontal scaling: run multiple gateway replicas behind a load balancer
+#   - Cache, queue, auth, rate limiting enabled
+#
+# Usage:
+#   docker compose -f docker-compose.discovery.yml up -d
+#
+# Scale gateway:
+#   docker compose -f docker-compose.discovery.yml up -d --scale hermes=3
+#
+# Add a new Ollama node at runtime (discovered automatically):
+#   docker run -d --name ollama-gpu3 \
+#     --label hermes.enable=true \
+#     --label hermes.provider.name=ollama-gpu3 \
+#     --label hermes.provider.type=ollama \
+#     --label hermes.provider.port=11434 \
+#     --label hermes.provider.models="llama3:8b" \
+#     --label hermes.provider.default-model=llama3:8b \
+#     --gpus all ollama/ollama:latest
+
+services:
+  hermes:
+    build: .
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      - API_KEY=your-secret-key
+      - ADMIN_KEY=your-admin-secret
+      - ADMIN_IP_WHITELIST=0.0.0.0/0
+      - CORS_ORIGIN=*
+      - MAX_PAYLOAD_MB=4
+      - CACHE_ENABLED=true
+      - CACHE_TTL=300
+      - CACHE_MAX_ENTRIES=1000
+      - CACHE_MAX_MEMORY_MB=128
+      - QUEUE_ENABLED=true
+      - QUEUE_MAX_CONCURRENCY=8
+      - QUEUE_MAX_SIZE=1000
+      - RATE_LIMIT=0
+      - DOCS_ENABLED=true
+      # Discovery — Docker + File providers
+      - DISCOVERY_DOCKER_ENABLED=true
+      - DISCOVERY_DOCKER_POLL_INTERVAL=5
+      - DISCOVERY_FILE_ENABLED=true
+      - DISCOVERY_FILE_PATHS=/app/data/dynamic/
+      - DISCOVERY_FILE_POLL_INTERVAL=5
+      # Fallback: if no discovered backends, use this Ollama
+      - OLLAMA_URL=http://ollama-default:11434
+    volumes:
+      - gateway-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./dynamic-config/:/app/data/dynamic/:ro
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      ollama-default:
+        condition: service_started
+
+  # Default Ollama backend (always available as fallback)
+  ollama-default:
+    image: ollama/ollama:latest
+    container_name: ollama-default
+    restart: unless-stopped
+    labels:
+      hermes.enable: "true"
+      hermes.provider.name: "ollama-default"
+      hermes.provider.type: "ollama"
+      hermes.provider.port: "11434"
+      hermes.provider.models: "llama3:8b,gemma3:4b,qwen3:8b"
+      hermes.provider.default-model: "llama3:8b"
+      hermes.provider.weight: "5"
+    volumes:
+      - ollama-default-data:/root/.ollama
+
+  # GPU node 1 — high-performance, discovered via labels
+  ollama-gpu1:
+    image: ollama/ollama:latest
+    container_name: ollama-gpu1
+    restart: unless-stopped
+    labels:
+      hermes.enable: "true"
+      hermes.provider.name: "ollama-gpu1"
+      hermes.provider.type: "ollama"
+      hermes.provider.port: "11434"
+      hermes.provider.models: "llama3:8b,llama3:70b,qwen3:8b,gemma3:12b"
+      hermes.provider.default-model: "llama3:8b"
+      hermes.provider.weight: "10"
+      hermes.model-routing.llama3-70b: "ollama-gpu1"
+    volumes:
+      - ollama-gpu1-data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # GPU node 2 — secondary, discovered via labels
+  ollama-gpu2:
+    image: ollama/ollama:latest
+    container_name: ollama-gpu2
+    restart: unless-stopped
+    labels:
+      hermes.enable: "true"
+      hermes.provider.name: "ollama-gpu2"
+      hermes.provider.type: "ollama"
+      hermes.provider.port: "11434"
+      hermes.provider.models: "llama3:8b,gemma3:4b"
+      hermes.provider.default-model: "llama3:8b"
+      hermes.provider.weight: "8"
+    volumes:
+      - ollama-gpu2-data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  gateway-data:
+  ollama-default-data:
+  ollama-gpu1-data:
+  ollama-gpu2-data:
