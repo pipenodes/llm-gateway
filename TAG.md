@@ -8,11 +8,12 @@
 
 | Campo | Valor |
 |--------|--------|
-| Tag | `v2.0.6` |
+| Tag | `v2.0.7` |
 
 ## Histórico
 
 | Tag | Data (ISO) | Commit (curto) | Nota |
 |-----|------------|----------------|------|
+| v2.0.7 | 2026-03-30 | — | Docker: `make all`; `.dockerignore` recursivo; `make clean` (LTO host vs container) |
 | v2.0.6 | 2026-03-30 | 51b782a | CI separado; deploy só com tag `v*` na linha master/main; TAG.md e CHANGELOG.md |
 

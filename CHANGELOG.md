@@ -14,6 +14,13 @@ Cada tag `v*` que dispara o workflow de release deve ter uma secção `[vX.Y.Z] 
 
 ### Removed
 
+## [v2.0.7] - 2026-03-30
+
+### Fixed
+
+- Imagem Docker: compilação com `make all` (fontes em `src/plugins/core` e `src/plugins/enterprise`), em vez do comando `g++` monolítico com caminhos antigos ([`Dockerfile`](Dockerfile)).
+- Build Docker em contentor Debian 12: exclusão recursiva de artefactos `**/*.o`, `**/*.a`, `**/*.so` e binário `hermes` no [`.dockerignore`](.dockerignore), mais `make clean` antes de `make all`, para evitar erro de LTO (bytecode do GCC do host vs do container).
+
 ## [v2.0.6] - 2026-03-30
 
 ### Changed

@@ -112,3 +112,21 @@ Agora gere uma tag para deployar.
 
 **Resultado:** Commit `51b782a` com workflows CI/release, `TAG.md`, `CHANGELOG.md` (`[v2.0.6]`), remoção do gitlink `googletest-src` e docs; tag anotada `v2.0.6`; `git push main master` e `git push main v2.0.6`. `TAG.md` atualizado com hash curto `51b782a` após o push da tag.
 
+### Prompt 18
+
+Erro no build Docker: `cc1plus: fatal error: src/plugins/logging_plugin.cpp: No such file` (lista de plugins na raiz antiga de `src/plugins/`).
+
+**Resultado:** `Dockerfile` passa a compilar com `make -j$(nproc) all` (mesmas fontes que o CI local), em vez do comando `g++` único com caminhos desatualizados; `make` explícito nas dependências APT; removido `RUN wget` duplicado do `httplib.h` (o alvo `make all` já o obtém).
+
+### Prompt 19
+
+O docker desktop tava fora, iniciei ele, tente denovo.
+
+**Resultado:** Build local falhou com LTO 13.1 vs 12.0: ficheiros `*.o` do host em `src/` entravam no contexto porque `.dockerignore` só tinha `*.o` (raiz). Atualizado para `**/*.o`, `**/*.a`, `**/*.so` e `/hermes`; no `Dockerfile`, `make clean` antes de `make all`. `docker build -t llm-gateway-test:local .` concluído com sucesso.
+
+### Prompt 20
+
+pronto tag commit and push
+
+**Resultado:** `CHANGELOG.md` `[v2.0.7]`, `TAG.md` atualizado; commit com `Dockerfile`, `.dockerignore`, `historico-de-prompts.md`; tag anotada `v2.0.7`; `git push main master` e `git push main v2.0.7`.
+
