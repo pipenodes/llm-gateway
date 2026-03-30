@@ -1,8 +1,8 @@
-﻿apiVersion: autoscaling/v2
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: llm-gateway
-  namespace: pipeleap
+  namespace: pipenodes
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

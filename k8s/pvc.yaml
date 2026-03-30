@@ -2,7 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: hermes-plugins
-  namespace: pipeleap
+  namespace: pipenodes
 spec:
   accessModes: [ReadWriteOnce]
   resources:

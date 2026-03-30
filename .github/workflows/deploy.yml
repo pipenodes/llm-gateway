@@ -1,0 +1,115 @@
+﻿name: CI/CD
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  KUSTOMIZE_VERSION: v5.4.3
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar dependências de build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libjsoncpp-dev libssl-dev libcurl4-openssl-dev libyaml-cpp-dev wget
+
+      - name: Configurar e executar testes
+        run: |
+          make all
+          ./hermes &
+          sleep 2
+          curl -sf http://localhost:8080/health | grep -q '"ok"'
+          curl -sf http://localhost:8080/metrics | grep -q '"uptime_seconds"'
+          kill %1 || true
+
+  build-push-deploy:
+    needs: test
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' &&
+       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))
+    runs-on: ubuntu-latest
+    environment: llm-gateway-pipenodes-secrets
+    env:
+      K8S_API_SERVER: ${{ vars.K8S_API_SERVER || 'https://k3s.pipenodes.com' }}
+      K8S_SKIP_TLS_VERIFY: ${{ vars.K8S_SKIP_TLS_VERIFY || secrets.K8S_SKIP_TLS_VERIFY || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Kustomize
+        run: |
+          curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${{ env.KUSTOMIZE_VERSION }}/kustomize_${{ env.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz" | tar xz
+          sudo install -m 755 kustomize /usr/local/bin/
+
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.31.0
+
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Imagem (nome em minúsculas para o Docker)
+        run: |
+          echo "IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - name: Build e push da imagem
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+
+      - name: Configurar kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBECONFIG }}" > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+      - name: Definir endpoint da API do cluster
+        run: |
+          CLUSTER=$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+          kubectl config set-cluster "$CLUSTER" --server="${K8S_API_SERVER}"
+
+      - name: Ajustar TLS do cluster (x509 / CA)
+        run: |
+          CLUSTER=$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+          SK="${K8S_SKIP_TLS_VERIFY}"
+          SK=$(echo "$SK" | tr '[:upper:]' '[:lower:]')
+          if [ "$SK" = "true" ] || [ "$SK" = "1" ] || [ "$SK" = "yes" ]; then
+            kubectl config set-cluster "$CLUSTER" --insecure-skip-tls-verify=true
+          fi
+
+      - name: Verificar API Kubernetes (descoberta)
+        run: |
+          echo "kubeconfig server:"
+          kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}' && echo
+          kubectl get --raw /version
+
+      - name: Aplicar manifests no Kubernetes
+        run: |
+          cd k8s
+          kustomize edit set image "pipenodes/llm-gateway=${IMAGE}:${{ github.sha }}"
+          kubectl apply --validate=false -k .
+        env:
+          IMAGE: ${{ env.IMAGE }}

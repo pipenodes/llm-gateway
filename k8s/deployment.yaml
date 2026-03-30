@@ -2,11 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hermes
-  namespace: pipeleap
+  namespace: pipenodes
   labels:
     app: hermes
     app.kubernetes.io/component: gateway
-    pipeleap/product: llm-gateway
+    pipenodes/product: llm-gateway
 spec:
   replicas: 2
   selector:
@@ -31,7 +31,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: hermes
-          image: pipeleap/llm-gateway:2.0
+          image: pipenodes/llm-gateway:2.0
           ports:
             - name: http
               containerPort: 8080
@@ -44,19 +44,19 @@ spec:
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: pipeleap-secrets
+                  name: pipenodes-secrets
                   key: OPENAI_API_KEY
                   optional: true
             - name: OPENROUTER_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: pipeleap-secrets
+                  name: pipenodes-secrets
                   key: OPENROUTER_API_KEY
                   optional: true
             - name: PIPELEAP_LICENSE_KEY
               valueFrom:
                 secretKeyRef:
-                  name: pipeleap-secrets
+                  name: pipenodes-secrets
                   key: PIPELEAP_LICENSE_KEY
                   optional: true
           volumeMounts:

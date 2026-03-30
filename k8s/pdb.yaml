@@ -1,8 +1,8 @@
-﻿apiVersion: policy/v1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: llm-gateway
-  namespace: pipeleap
+  namespace: pipenodes
 spec:
   minAvailable: 1
   selector:
