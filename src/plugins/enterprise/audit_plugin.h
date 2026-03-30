@@ -1,5 +1,5 @@
 #pragma once
-#include "../plugin.h"
+#include "plugin.h"
 #include "../core_services.h"
 #include <queue>
 #include <mutex>

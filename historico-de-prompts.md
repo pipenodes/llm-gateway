@@ -16,3 +16,9 @@ Continuar correção do CI llm-gateway: includes de plugins após reorganizaçã
 
 **Resultado:** `gateway.cpp` atualizado com `#include` para `plugins/core/*` e `plugins/enterprise/*`; `gateway.h` já apontava para os caminhos corretos.
 
+### Prompt 2
+
+Run make all — erro no pipeline: `logging_plugin.h` fatal error `../plugin.h: No such file or directory`.
+
+**Resultado:** Trocado `#include "../plugin.h"` por `#include "plugin.h"` em todos os headers sob `src/plugins/core/` e `src/plugins/enterprise/`, alinhado ao `-Isrc` do Makefile e à localização real de `src/plugin.h` (o `../` apontava para `src/plugins/plugin.h`, inexistente).
+

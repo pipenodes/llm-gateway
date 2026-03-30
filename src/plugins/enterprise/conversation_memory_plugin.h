@@ -1,5 +1,5 @@
 #pragma once
-#include "../plugin.h"
+#include "plugin.h"
 #include <unordered_map>
 #include <deque>
 #include <shared_mutex>

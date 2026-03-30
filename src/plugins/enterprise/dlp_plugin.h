@@ -1,5 +1,5 @@
 #pragma once
-#include "../plugin.h"
+#include "plugin.h"
 #include <string>
 #include <vector>
 #include <unordered_map>
