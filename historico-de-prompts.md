@@ -106,3 +106,9 @@ Deploy só em tags + TAG.md / CHANGELOG.md + regra Cursor (implementar plano: CI
 
 **Resultado:** Criado `.github/workflows/ci.yml` (testes em PR e push `main`/`master`). `deploy.yml` como workflow **Release**: `on` em tags `v*` e `workflow_dispatch`; verificação `merge-base` contra `origin/master` ou `origin/main`; imagem com SHA, `latest` e nome da tag só em push de tag; Kustomize mantém imagem por SHA. Adicionados `TAG.md`, `CHANGELOG.md`, `.cursor/rules/release-and-tags.mdc` (`alwaysApply`). README com badges CI/Release, parágrafo de deploy e secção **Release**; CONTRIBUTING com secção **Releases**. Entrada neste histórico.
 
+### Prompt 17
+
+Agora gere uma tag para deployar.
+
+**Resultado:** Commit `51b782a` com workflows CI/release, `TAG.md`, `CHANGELOG.md` (`[v2.0.6]`), remoção do gitlink `googletest-src` e docs; tag anotada `v2.0.6`; `git push main master` e `git push main v2.0.6`. `TAG.md` atualizado com hash curto `51b782a` após o push da tag.
+
