@@ -22,3 +22,9 @@ Run make all — erro no pipeline: `logging_plugin.h` fatal error `../plugin.h: 
 
 **Resultado:** Trocado `#include "../plugin.h"` por `#include "plugin.h"` em todos os headers sob `src/plugins/core/` e `src/plugins/enterprise/`, alinhado ao `-Isrc` do Makefile e à localização real de `src/plugin.h` (o `../` apontava para `src/plugins/plugin.h`, inexistente).
 
+### Prompt 3
+
+git tag commit and push
+
+**Resultado:** Commit `68d0968` com a correção de includes; tag anotada `v2.0.3-plugin-includes`; `git push main master` e `git push main v2.0.3-plugin-includes` (remote nomeado `main`, não `origin`).
+
