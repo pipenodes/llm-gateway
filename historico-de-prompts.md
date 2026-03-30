@@ -88,3 +88,9 @@ Completar README com ribbons de Kubernetes, attestation GitHub e afins.
 
 **Resultado:** Segunda linha de badges: Artifact Attestations (link `.../attestations`), SLSA, Sigstore, Prometheus, OpenAPI, Ollama; primeira linha ganhou Kubernetes e Kustomize (links para `k8s/`). Parágrafo `<sub>` em PT sobre deploy Kustomize, attestations no GHCR e doc oficial PT + `gh attestation verify`.
 
+### Prompt 14
+
+tag commit and push
+
+**Resultado:** Commit `d1c2ecf` (gitignore, remoção submodule `.cursor`/`.gitmodules`, workflow, README badges, Makefile enterprise, `SOLUTION_SUMMARY` em `docs/`, etc.); tag `v2.0.5-ci-readme-gitignore`; `git push main master` e push da tag.
+
