@@ -46,3 +46,45 @@ tag commit and push
 
 **Resultado:** Commit `a3021ca` (apenas fontes/plugins/scripts/histórico; `.o` rastreados restaurados para não versionar build local). Tag `v2.0.4-ci-unit-tests`. `git push main master` e `git push main v2.0.4-ci-unit-tests`.
 
+### Prompt 7
+
+Implementar cache de dependências (docs GitHub Actions) e actions/attest-build-provenance no workflow.
+
+**Resultado:** Em `.github/workflows/deploy.yml`: job `test` com `actions/cache@v4` em `.apt-cache` e `Dir::Cache::Archives` via `apt.conf`; job `build-push-deploy` com cache do binário Kustomize, `docker/setup-buildx-action` + `cache-from`/`cache-to` type=gha no build-push; permissões `id-token` e `attestations` só no deploy; passo `actions/attest-build-provenance@v4` com `subject-digest` do build e `push-to-registry: true`.
+
+### Prompt 8
+
+Erro de link LTO: undefined reference a `FinOpsPlugin`, `DataDiscoveryPlugin`, `DLPPlugin`, `GuardrailsPlugin` (vtable/typeinfo).
+
+**Resultado:** Inclusão de `guardrails_plugin.cpp`, `data_discovery_plugin.cpp`, `dlp_plugin.cpp` e `finops_plugin.cpp` em `ENTERPRISE_PLUGIN_SOURCES` no `Makefile` (já usados em `gateway.cpp`, mas não linkados no alvo `hermes`).
+
+### Prompt 9
+
+Criar `.gitignore` coerente para o projeto; não versionar `.cursor`.
+
+**Resultado:** Adicionado `.gitignore` na raiz cobrindo `.cursor`, binários C++ (`hermes`, `*.o`, `*.so`, etc.), diretórios CMake (`build*/`, artefatos), `node_modules`/build front, Python venv/cache, `.env`, logs e IDEs comuns.
+
+### Prompt 10
+
+Não quero nada de `.claude/`.
+
+**Resultado:** `.gitignore` atualizado para ignorar `.claude/` e `.claude` por completo (removida exceção que só ignorava `settings.local.json`).
+
+### Prompt 11
+
+Não quero nada de `.gitmodules`.
+
+**Resultado:** `.gitmodules` adicionado ao `.gitignore`; submodule `.cursor` desinicializado e removido do repositório (`git submodule deinit`, `git rm .cursor`); `git rm .gitmodules` para deixar de versionar o ficheiro.
+
+### Prompt 12
+
+Incluir no README os ribbons (badges) do projeto.
+
+**Resultado:** Bloco de badges após o título `# HERMES`: CI/CD (workflow `deploy.yml`), licença Apache 2.0, C++23, imagem GHCR/Docker, estrelas e forks no GitHub (`pipenodes/llm-gateway`).
+
+### Prompt 13
+
+Completar README com ribbons de Kubernetes, attestation GitHub e afins.
+
+**Resultado:** Segunda linha de badges: Artifact Attestations (link `.../attestations`), SLSA, Sigstore, Prometheus, OpenAPI, Ollama; primeira linha ganhou Kubernetes e Kustomize (links para `k8s/`). Parágrafo `<sub>` em PT sobre deploy Kustomize, attestations no GHCR e doc oficial PT + `gh attestation verify`.
+

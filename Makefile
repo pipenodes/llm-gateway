@@ -24,6 +24,10 @@ CORE_PLUGIN_SOURCES = \
 
 # ── Enterprise plugins (loaded statically in full build; .so in enterprise-so) ─
 ENTERPRISE_PLUGIN_SOURCES = \
+	$(SRCDIR)/plugins/enterprise/guardrails_plugin.cpp \
+	$(SRCDIR)/plugins/enterprise/data_discovery_plugin.cpp \
+	$(SRCDIR)/plugins/enterprise/dlp_plugin.cpp \
+	$(SRCDIR)/plugins/enterprise/finops_plugin.cpp \
 	$(SRCDIR)/plugins/enterprise/semantic_cache_plugin.cpp \
 	$(SRCDIR)/plugins/enterprise/pii_redaction_plugin.cpp \
 	$(SRCDIR)/plugins/enterprise/content_moderation_plugin.cpp \

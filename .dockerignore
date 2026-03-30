@@ -19,6 +19,7 @@ tests/build/
 # Git
 .git/
 .gitignore
+.gitmodules
 
 # CI
 .github/
@@ -29,3 +30,6 @@ docs/
 
 # k8s
 k8s/
+
+# Cursor
+.cursor/

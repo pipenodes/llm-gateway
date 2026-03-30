@@ -1,0 +1,88 @@
+# ── Cursor (não versionar pasta nem arquivo legado) ─────────────────────────
+.cursor
+.cursor/
+
+# ── Git submodules (não versionar .gitmodules) ──────────────────────────────
+.gitmodules
+
+# ── Binários e linkagem (C++ / Make) ─────────────────────────────────────────
+/hermes
+/hermes.exe
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exp
+*.pdb
+*.ilk
+
+# Plugins enterprise compilados como .so (make enterprise-so)
+/plugins/enterprise/*.so
+
+# ── CMake e builds de teste locais ───────────────────────────────────────────
+build/
+build-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile.cmake
+compile_commands.json
+
+# ── Node.js (ex.: hermes-dashboard) ─────────────────────────────────────────
+node_modules/
+dist/
+.npm
+.pnpm-store/
+*.tsbuildinfo
+
+# ── Python (scripts) ─────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# ── Ambiente e segredos ──────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Logs e temporários ───────────────────────────────────────────────────────
+*.log
+*.tmp
+*.temp
+/tmp/
+
+# ── Cobertura / sanitizers ───────────────────────────────────────────────────
+*.gcno
+*.gcda
+*.profraw
+*.gcov
+
+# ── IDEs e editores ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.user
+*.swp
+*~
+.project
+.cproject
+
+# ── SO ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── Claude Code (não versionar) ──────────────────────────────────────────────
+.claude/
+.claude
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+.gitmodules

@@ -1,4 +1,4 @@
-﻿name: CI/CD
+name: CI/CD
 
 on:
   push:
@@ -22,8 +22,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Diretório de cache APT (workspace, gravável pelo runner)
+        run: mkdir -p "$GITHUB_WORKSPACE/.apt-cache/archives"
+
+      - name: Cache pacotes APT
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.apt-cache
+          key: ${{ runner.os }}-apt-llmgw-${{ hashFiles('.github/workflows/deploy.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-llmgw-
+
       - name: Instalar dependências de build
         run: |
+          echo "Dir::Cache::Archives \"$GITHUB_WORKSPACE/.apt-cache/archives\";" | sudo tee /etc/apt/apt.conf.d/99github-cache
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential libjsoncpp-dev libssl-dev libcurl4-openssl-dev libyaml-cpp-dev wget
@@ -44,6 +56,11 @@ jobs:
       (github.event_name == 'push' &&
        (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
     environment: llm-gateway-pipenodes-secrets
     env:
       K8S_API_SERVER: ${{ vars.K8S_API_SERVER || 'https://k3s.pipenodes.com' }}
@@ -51,10 +68,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache binário Kustomize
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/kustomize-bin
+          key: kustomize-${{ env.KUSTOMIZE_VERSION }}-linux-amd64
+
       - name: Instalar Kustomize
         run: |
-          curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${{ env.KUSTOMIZE_VERSION }}/kustomize_${{ env.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz" | tar xz
-          sudo install -m 755 kustomize /usr/local/bin/
+          mkdir -p "${{ runner.temp }}/kustomize-bin"
+          if [ ! -x "${{ runner.temp }}/kustomize-bin/kustomize" ]; then
+            curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${{ env.KUSTOMIZE_VERSION }}/kustomize_${{ env.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz" \
+              | tar xz -C "${{ runner.temp }}/kustomize-bin"
+          fi
+          sudo install -m 755 "${{ runner.temp }}/kustomize-bin/kustomize" /usr/local/bin/
 
       - uses: azure/setup-kubectl@v4
         with:
@@ -71,7 +98,11 @@ jobs:
         run: |
           echo "IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build e push da imagem
+        id: docker-build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -79,6 +110,16 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Proveniência SLSA / in-toto; v4 encapsula actions/attest — ver https://github.com/actions/attest-build-provenance
+      - name: Attestation de proveniência da imagem
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.docker-build.outputs.digest }}
+          push-to-registry: true
 
       - name: Configurar kubeconfig
         run: |

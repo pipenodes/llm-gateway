@@ -1,4 +1,22 @@
-﻿# HERMES
+# HERMES
+
+[![CI/CD](https://github.com/pipenodes/llm-gateway/actions/workflows/deploy.yml/badge.svg)](https://github.com/pipenodes/llm-gateway/actions/workflows/deploy.yml)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/pipenodes/llm-gateway/blob/master/LICENSE)
+[![C++](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=c%2B%2B&logoColor=white)](https://en.cppreference.com/w/cpp/23)
+[![Docker](https://img.shields.io/badge/GHCR-image-2496ED?logo=docker&logoColor=white)](https://github.com/pipenodes/llm-gateway/pkgs/container/llm-gateway)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-manifests-326CE5?logo=kubernetes&logoColor=white)](https://github.com/pipenodes/llm-gateway/tree/master/k8s)
+[![Kustomize](https://img.shields.io/badge/Kustomize-deploy-30638e?logo=kustomize&logoColor=white)](https://github.com/pipenodes/llm-gateway/blob/master/k8s/kustomization.yaml)
+[![GitHub stars](https://img.shields.io/github/stars/pipenodes/llm-gateway?style=flat&logo=github)](https://github.com/pipenodes/llm-gateway/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/pipenodes/llm-gateway?style=flat&logo=github)](https://github.com/pipenodes/llm-gateway/forks)
+
+[![Artifact attestations](https://img.shields.io/badge/Proveni%C3%AAncia-Artifact_Attestations-2088FF?logo=github)](https://github.com/pipenodes/llm-gateway/attestations)
+[![SLSA](https://img.shields.io/badge/SLSA-build%20provenance-3FB950?logo=slsa&logoColor=white)](https://slsa.dev/)
+[![Sigstore](https://img.shields.io/badge/Sigstore-assinatura-4445ED?logo=sigstore&logoColor=white)](https://www.sigstore.dev/)
+[![Prometheus](https://img.shields.io/badge/M%C3%A9tricas-Prometheus-E6522C?logo=prometheus&logoColor=white)](https://prometheus.io/docs/introduction/overview/)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-documenta%C3%A7%C3%A3o-6BA539?logo=openapiinitiative&logoColor=white)](https://www.openapis.org/)
+[![Ollama](https://img.shields.io/badge/Backend-Ollama-000000?logo=ollama&logoColor=white)](https://ollama.com/)
+
+<sub>**Deploy:** manifests em [`k8s/`](https://github.com/pipenodes/llm-gateway/tree/master/k8s) (Kubernetes + [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/)), aplicados no CI em `main`/`master`. **Proveniência:** o workflow [CI/CD](https://github.com/pipenodes/llm-gateway/actions/workflows/deploy.yml) gera [Artifact Attestations](https://docs.github.com/pt/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds) para a imagem no GHCR (`actions/attest-build-provenance`); ver [attestations do repositório](https://github.com/pipenodes/llm-gateway/attestations) e validação com `gh attestation verify`.</sub>
 
 HERMES (Hybrid Engine for Reasoning, Models & Execution Services) — Gateway HTTP em C++23 que expoe uma API compativel com OpenAI, roteando requisicoes para backends [Ollama](https://ollama.com). Inclui cache, rate limiting, API keys, streaming SSE, metricas Prometheus, documentacao OpenAPI e mais.
 
@@ -146,7 +164,7 @@ Toda configuracao pode ser feita via `config.json` ou variaveis de ambiente (env
     "max_memory_mb": 128
   },
   "docs": { "enabled": false },
-  "updates": {
+  "git aupdates": {
     "check_url": "https://seu-servidor.com/releases/manifest.json",
     "staged_binary_path": "/tmp/hermes.new",
     "exit_code_for_restart": 42
