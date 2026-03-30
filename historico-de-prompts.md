@@ -40,3 +40,9 @@ Revisar se não faltou mais nada para os testes darem certo antes de commitar; t
 
 **Resultado:** Renomeadas structs duplicadas em headers enterprise (`PromptInjectionPattern`, `GuardrailsInjectionPattern`, `CostControllerModelPricing`, `FinOpsModelPricing`) para `make all` após includes corrigidos. `flush_loop` em data_discovery, finops, cost_controller e usage_tracking passa a dormir em passos de 1s com checagem de `running_`, para `shutdown()`/`join()` não bloquearem até `flush_interval_seconds_`. `dlp_plugin.cpp`: removido `asStringRef()` (JsonCpp antigo do Ubuntu). `scripts/unit-tests/CMakeLists.txt`: linka `.cpp` dos plugins + OpenSSL + `CPPHTTPLIB_OPENSSL_SUPPORT`, baixa `httplib.h` se ausente, `gtest_discover_tests` com `DISCOVERY_MODE PRE_TEST`, CMake ≥3.18. `test_security_plugins.cpp`: regexes de discovery mais seguras para `std::regex`/libstdc++. Validado no WSL: 25 testes passando; `make all` local falhou só por falta de `libyaml-cpp-dev` no WSL (CI já instala).
 
+### Prompt 6
+
+tag commit and push
+
+**Resultado:** Commit `a3021ca` (apenas fontes/plugins/scripts/histórico; `.o` rastreados restaurados para não versionar build local). Tag `v2.0.4-ci-unit-tests`. `git push main master` e `git push main v2.0.4-ci-unit-tests`.
+
