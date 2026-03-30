@@ -128,5 +128,5 @@ O docker desktop tava fora, iniciei ele, tente denovo.
 
 pronto tag commit and push
 
-**Resultado:** `CHANGELOG.md` `[v2.0.7]`, `TAG.md` atualizado; commit com `Dockerfile`, `.dockerignore`, `historico-de-prompts.md`; tag anotada `v2.0.7`; `git push main master` e `git push main v2.0.7`.
+**Resultado:** `CHANGELOG.md` `[v2.0.7]`, `TAG.md` atualizado; commit `7885570` (`Dockerfile`, `.dockerignore`, `historico-de-prompts.md`); tag anotada `v2.0.7`; `git push main master` e `git push main v2.0.7`; `TAG.md` com hash `7885570` em commit de documentação seguinte.
 
