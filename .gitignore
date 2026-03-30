@@ -25,6 +25,8 @@
 # ── CMake e builds de teste locais ───────────────────────────────────────────
 build/
 build-*/
+# FetchContent (evita gitlink 160000 órfão sem .gitmodules no checkout Actions)
+build-e2e/_deps/googletest-src/
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt

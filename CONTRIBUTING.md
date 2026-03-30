@@ -66,6 +66,17 @@ Key source files:
 
 ---
 
+## Releases (imagem e Kubernetes)
+
+Publicar uma versão que dispara build no GHCR e `kubectl apply` **não** é feito só com merge em `main`/`master`. O fluxo esperado:
+
+1. Atualizar [`CHANGELOG.md`](CHANGELOG.md) e [`TAG.md`](TAG.md).
+2. Criar tag anotada `v*` e fazer `git push` do branch e da tag.
+
+Detalhes e links para os workflows: secção **Release** no [README.md](README.md) (CI em `.github/workflows/ci.yml`, release em `.github/workflows/deploy.yml`).
+
+---
+
 ## Build
 
 Requirements: `g++` with C++23 support, `libjsoncpp-dev`, `libssl-dev`,

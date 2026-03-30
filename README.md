@@ -1,6 +1,7 @@
 # HERMES
 
-[![CI/CD](https://github.com/pipenodes/llm-gateway/actions/workflows/deploy.yml/badge.svg)](https://github.com/pipenodes/llm-gateway/actions/workflows/deploy.yml)
+[![CI](https://github.com/pipenodes/llm-gateway/actions/workflows/ci.yml/badge.svg)](https://github.com/pipenodes/llm-gateway/actions/workflows/ci.yml)
+[![Release](https://github.com/pipenodes/llm-gateway/actions/workflows/deploy.yml/badge.svg)](https://github.com/pipenodes/llm-gateway/actions/workflows/deploy.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/pipenodes/llm-gateway/blob/master/LICENSE)
 [![C++](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=c%2B%2B&logoColor=white)](https://en.cppreference.com/w/cpp/23)
 [![Docker](https://img.shields.io/badge/GHCR-image-2496ED?logo=docker&logoColor=white)](https://github.com/pipenodes/llm-gateway/pkgs/container/llm-gateway)
@@ -16,7 +17,7 @@
 [![OpenAPI](https://img.shields.io/badge/OpenAPI-documenta%C3%A7%C3%A3o-6BA539?logo=openapiinitiative&logoColor=white)](https://www.openapis.org/)
 [![Ollama](https://img.shields.io/badge/Backend-Ollama-000000?logo=ollama&logoColor=white)](https://ollama.com/)
 
-<sub>**Deploy:** manifests em [`k8s/`](https://github.com/pipenodes/llm-gateway/tree/master/k8s) (Kubernetes + [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/)), aplicados no CI em `main`/`master`. **Proveniência:** o workflow [CI/CD](https://github.com/pipenodes/llm-gateway/actions/workflows/deploy.yml) gera [Artifact Attestations](https://docs.github.com/pt/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds) para a imagem no GHCR (`actions/attest-build-provenance`); ver [attestations do repositório](https://github.com/pipenodes/llm-gateway/attestations) e validação com `gh attestation verify`.</sub>
+<sub>**Deploy:** manifests em [`k8s/`](https://github.com/pipenodes/llm-gateway/tree/master/k8s) (Kubernetes + [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/)), aplicados pelo workflow [Release](https://github.com/pipenodes/llm-gateway/actions/workflows/deploy.yml) ao publicar uma **tag `v*`** (ou execução manual `workflow_dispatch`), não em cada push a `main`/`master`. **CI:** testes em PR e push ao branch em [CI](https://github.com/pipenodes/llm-gateway/actions/workflows/ci.yml). **Proveniência:** o workflow Release gera [Artifact Attestations](https://docs.github.com/pt/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds) para a imagem no GHCR (`actions/attest-build-provenance`); ver [attestations do repositório](https://github.com/pipenodes/llm-gateway/attestations) e validação com `gh attestation verify`. Ver também [Release](#release) e [`TAG.md`](TAG.md) / [`CHANGELOG.md`](CHANGELOG.md).</sub>
 
 HERMES (Hybrid Engine for Reasoning, Models & Execution Services) — Gateway HTTP em C++23 que expoe uma API compativel com OpenAI, roteando requisicoes para backends [Ollama](https://ollama.com). Inclui cache, rate limiting, API keys, streaming SSE, metricas Prometheus, documentacao OpenAPI e mais.
 
@@ -807,32 +808,36 @@ flowchart TB
 | `scripts/test/` | Testes funcionais |
 | `docs/spec/` | Especificacoes RF-XX (30 FUNCIONAL + 4 AI + 1 UX + 1 ADR) |
 
+## Release
+
+Fluxo resumido para publicar versão com build de imagem e deploy:
+
+1. Garantir que `master`/`main` tem o commit desejado (merge concluído).
+2. Atualizar [`CHANGELOG.md`](CHANGELOG.md) (secção da versão) e [`TAG.md`](TAG.md) **antes** de enviar a tag ao remoto.
+3. Criar tag anotada `vX.Y.Z` e fazer push: `git push origin <branch>` e `git push origin vX.Y.Z`.
+
+Workflows: [**CI**](https://github.com/pipenodes/llm-gateway/actions/workflows/ci.yml) (testes em PR e push a `main`/`master`) e [**Release**](https://github.com/pipenodes/llm-gateway/actions/workflows/deploy.yml) (tag `v*` ou `workflow_dispatch`; o commit da tag deve estar na linha de `origin/master` ou `origin/main`). A imagem no GHCR recebe etiquetas pelo SHA do commit, `latest` e, em push de tag, o nome da tag (ex.: `v2.0.6`). O Kustomize continua a fixar a imagem pelo SHA para deploy imutável.
+
 ## CI/CD
+
+No repositório upstream, o gateway usa GitHub Actions para **CI** (compilação e health/metrics) e **Release** (imagem + Kubernetes), conforme acima. Outros repositórios ou forks podem ter pipelines adicionais (build, ASAN, Docker, etc.).
 
 ```mermaid
 flowchart LR
-    subgraph jobs [GitHub Actions]
-        J1[build]
-        J2[asan]
-        J3[tsan]
-        J4[edge]
-        J5[docker]
-        J6[docker-edge]
+    subgraph ci [CI ci.yml]
+        C1[checkout]
+        C2[make all]
+        C3[health / metrics]
+        C1 --> C2 --> C3
     end
-    J1 -->|smoke tests| OK1[OK]
-    J2 -->|AddressSanitizer| OK2[OK]
-    J3 -->|ThreadSanitizer| OK3[OK]
-    J4 -->|make edge + health| OK4[OK]
-    J5 -->|imagem + container| OK5[OK]
-    J6 -->|imagem edge + health| OK6[OK]
+    subgraph rel [Release deploy.yml]
+        R0[tag na master/main]
+        R1[test]
+        R2[build push]
+        R3[kubectl apply]
+        R0 --> R1 --> R2 --> R3
+    end
 ```
-
-1. **build** — Compilacao com flags de producao + smoke tests
-2. **asan** — Build com AddressSanitizer + testes
-3. **tsan** — Build com ThreadSanitizer + testes
-4. **edge** — Build minimal (`make edge`) + smoke test (health, metrics)
-5. **docker** — Build da imagem Docker + teste do container
-6. **docker-edge** — Build da imagem Docker edge (`Dockerfile.edge`) + smoke test
 
 ## Stack Tecnica
 

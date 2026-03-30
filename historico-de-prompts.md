@@ -94,3 +94,15 @@ tag commit and push
 
 **Resultado:** Commit `d1c2ecf` (gitignore, remoção submodule `.cursor`/`.gitmodules`, workflow, README badges, Makefile enterprise, `SOLUTION_SUMMARY` em `docs/`, etc.); tag `v2.0.5-ci-readme-gitignore`; `git push main master` e push da tag.
 
+### Prompt 15
+
+CI: falha ao gravar cache APT (`lock`/`partial` permission denied); warning `No url found for submodule ... googletest-src`.
+
+**Resultado:** Após `apt-get install`, `sudo chown -R "$USER:$USER" .apt-cache` no `deploy.yml`. Removido gitlink `build-e2e/_deps/googletest-src` do índice (`git rm --cached`); entrada em `.gitignore` para `build-e2e/_deps/googletest-src/` (FetchContent, sem .gitmodules).
+
+### Prompt 16
+
+Deploy só em tags + TAG.md / CHANGELOG.md + regra Cursor (implementar plano: CI separado, release por tag `v*`, TAG/CHANGELOG, regra `.cursor/rules/release-and-tags.mdc`, README/CONTRIBUTING).
+
+**Resultado:** Criado `.github/workflows/ci.yml` (testes em PR e push `main`/`master`). `deploy.yml` como workflow **Release**: `on` em tags `v*` e `workflow_dispatch`; verificação `merge-base` contra `origin/master` ou `origin/main`; imagem com SHA, `latest` e nome da tag só em push de tag; Kustomize mantém imagem por SHA. Adicionados `TAG.md`, `CHANGELOG.md`, `.cursor/rules/release-and-tags.mdc` (`alwaysApply`). README com badges CI/Release, parágrafo de deploy e secção **Release**; CONTRIBUTING com secção **Releases**. Entrada neste histórico.
+

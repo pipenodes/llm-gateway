@@ -1,0 +1,50 @@
+# Build e teste rápido em PR e push a main/master (sem imagem Docker nem K8s).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Diretório de cache APT (workspace, gravável pelo runner)
+        run: mkdir -p "$GITHUB_WORKSPACE/.apt-cache/archives"
+
+      - name: Cache pacotes APT
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.apt-cache
+          key: ${{ runner.os }}-apt-llmgw-${{ hashFiles('.github/workflows/ci.yml', '.github/workflows/deploy.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-llmgw-
+
+      - name: Instalar dependências de build
+        run: |
+          echo "Dir::Cache::Archives \"$GITHUB_WORKSPACE/.apt-cache/archives\";" | sudo tee /etc/apt/apt.conf.d/99github-cache
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libjsoncpp-dev libssl-dev libcurl4-openssl-dev libyaml-cpp-dev wget
+          sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE/.apt-cache"
+
+      - name: Configurar e executar testes
+        run: |
+          make all
+          ./hermes &
+          sleep 2
+          curl -sf http://localhost:8080/health | grep -q '"ok"'
+          curl -sf http://localhost:8080/metrics | grep -q '"uptime_seconds"'
+          kill %1 || true

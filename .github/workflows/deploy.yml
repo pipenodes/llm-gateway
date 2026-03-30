@@ -1,12 +1,15 @@
-name: CI/CD
+# Build de imagem, push GHCR, attestation e deploy Kubernetes.
+# Dispara em tag v* (commit deve estar na história de master ou main) ou workflow_dispatch manual.
+name: Release
 
 on:
   push:
-  pull_request:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: release-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -21,6 +24,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verificar tag na linha master/main
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        run: |
+          git fetch origin master main 2>/dev/null || true
+          SHA="${GITHUB_SHA}"
+          ok=false
+          for b in master main; do
+            if git show-ref --verify --quiet "refs/remotes/origin/${b}" 2>/dev/null; then
+              if git merge-base --is-ancestor "$SHA" "origin/${b}"; then
+                echo "OK: commit está na história de origin/${b}"
+                ok=true
+                break
+              fi
+            fi
+          done
+          if [ "$ok" != "true" ]; then
+            echo "::error::A tag deve apontar para um commit ancestral de origin/master ou origin/main."
+            exit 1
+          fi
 
       - name: Diretório de cache APT (workspace, gravável pelo runner)
         run: mkdir -p "$GITHUB_WORKSPACE/.apt-cache/archives"
@@ -29,7 +54,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.apt-cache
-          key: ${{ runner.os }}-apt-llmgw-${{ hashFiles('.github/workflows/deploy.yml') }}
+          key: ${{ runner.os }}-apt-llmgw-${{ hashFiles('.github/workflows/ci.yml', '.github/workflows/deploy.yml') }}
           restore-keys: |
             ${{ runner.os }}-apt-llmgw-
 
@@ -39,6 +64,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential libjsoncpp-dev libssl-dev libcurl4-openssl-dev libyaml-cpp-dev wget
+          sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE/.apt-cache"
 
       - name: Configurar e executar testes
         run: |
@@ -51,10 +77,6 @@ jobs:
 
   build-push-deploy:
     needs: test
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' &&
-       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -98,6 +120,21 @@ jobs:
         run: |
           echo "IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
+      - name: Lista de tags (v* na imagem só em push de tag)
+        id: imgtags
+        run: |
+          IMG="${{ env.IMAGE }}"
+          SHA="${{ github.sha }}"
+          {
+            echo "tags<<TAGS_EOF"
+            echo "${IMG}:${SHA}"
+            echo "${IMG}:latest"
+            if [ "${{ github.ref_type }}" = "tag" ]; then
+              echo "${IMG}:${{ github.ref_name }}"
+            fi
+            echo "TAGS_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -107,13 +144,10 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ${{ env.IMAGE }}:${{ github.sha }}
-            ${{ env.IMAGE }}:latest
+          tags: ${{ steps.imgtags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Proveniência SLSA / in-toto; v4 encapsula actions/attest — ver https://github.com/actions/attest-build-provenance
       - name: Attestation de proveniência da imagem
         uses: actions/attest-build-provenance@v4
         with:
