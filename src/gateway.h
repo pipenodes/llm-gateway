@@ -16,9 +16,9 @@
 #include "crypto.h"
 #include "plugin.h"
 #include "core_services.h"
-#include "plugins/logging_plugin.h"
-#include "plugins/semantic_cache_plugin.h"
-#include "plugins/usage_tracking_plugin.h"
+#include "plugins/core/logging_plugin.h"
+#include "plugins/enterprise/semantic_cache_plugin.h"
+#include "plugins/enterprise/usage_tracking_plugin.h"
 #include "edge_config.h"
 #include "dashboard.h"
 #if DOCS_ENABLED
