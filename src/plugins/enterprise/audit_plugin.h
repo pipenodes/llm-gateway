@@ -1,6 +1,6 @@
 #pragma once
 #include "plugin.h"
-#include "../core_services.h"
+#include "core_services.h"
 #include <queue>
 #include <mutex>
 #include <condition_variable>

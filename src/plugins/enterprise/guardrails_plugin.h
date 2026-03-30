@@ -46,7 +46,7 @@ struct TokenBucket {
     int64_t last_refill_epoch = 0;
 };
 
-struct InjectionPattern {
+struct GuardrailsInjectionPattern {
     std::string name;
     std::regex  pattern;
     float       weight;
@@ -74,7 +74,7 @@ private:
     GuardrailsTenantPolicy default_policy_;
     std::unordered_map<std::string, GuardrailsTenantPolicy> tenant_policies_; // "tenant:app"
 
-    std::vector<InjectionPattern> injection_patterns_;
+    std::vector<GuardrailsInjectionPattern> injection_patterns_;
 
     mutable std::shared_mutex rate_mtx_;
     std::unordered_map<std::string, TokenBucket> rate_buckets_; // "tenant:client_id"

@@ -1,7 +1,7 @@
 #include "data_discovery_plugin.h"
-#include "../../tenant_ctx.h"
-#include "../logger.h"
-#include "../crypto.h"
+#include "tenant_ctx.h"
+#include "logger.h"
+#include "crypto.h"
 #include <fstream>
 #include <sstream>
 #include <functional>
@@ -380,7 +380,9 @@ void DataDiscoveryPlugin::save_unlocked() const {
 
 void DataDiscoveryPlugin::flush_loop() {
     while (running_) {
-        std::this_thread::sleep_for(std::chrono::seconds(flush_interval_seconds_));
+        // Dorme em fatias de 1s para shutdown()/join() não esperarem flush_interval inteiro.
+        for (int s = 0; s < flush_interval_seconds_ && running_; ++s)
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         if (!running_) break;
         if (dirty_.exchange(false)) {
             std::shared_lock lock(catalog_mtx_);

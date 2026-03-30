@@ -1,5 +1,5 @@
 #include "logging_plugin.h"
-#include "../logger.h"
+#include "logger.h"
 
 bool LoggingPlugin::init(const Json::Value&) {
     return true;

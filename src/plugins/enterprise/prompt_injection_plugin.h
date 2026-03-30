@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-struct InjectionPattern {
+struct PromptInjectionPattern {
     std::string name;
     std::regex pattern;
     float weight;
@@ -20,7 +20,7 @@ public:
     PluginResult after_response(Json::Value& response, PluginRequestContext& ctx) override;
 
 private:
-    std::vector<InjectionPattern> patterns_;
+    std::vector<PromptInjectionPattern> patterns_;
     float block_threshold_ = 0.5f;
     float score_prompt(const std::string& text) const;
     std::string extract_full_prompt(const Json::Value& body) const;

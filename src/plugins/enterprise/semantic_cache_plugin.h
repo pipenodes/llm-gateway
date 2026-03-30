@@ -1,6 +1,6 @@
 #pragma once
 #include "plugin.h"
-#include "../ollama_client.h"
+#include "ollama_client.h"
 #include <shared_mutex>
 #include <atomic>
 

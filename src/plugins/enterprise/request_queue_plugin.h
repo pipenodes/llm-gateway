@@ -1,8 +1,8 @@
 #pragma once
 #include "plugin.h"
-#include "../core_services.h"
+#include "core_services.h"
 #if !EDGE_CORE
-#include "../request_queue.h"
+#include "request_queue.h"
 #endif
 
 class RequestQueuePlugin : public Plugin, public core::IRequestQueue {

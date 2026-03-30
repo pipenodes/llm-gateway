@@ -1,5 +1,5 @@
 #include "content_moderation_plugin.h"
-#include "../logger.h"
+#include "logger.h"
 #include <sstream>
 #include <algorithm>
 #include <cctype>

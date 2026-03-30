@@ -166,13 +166,13 @@ protected:
         Json::Value config;
         config["catalog_path"]           = "";  // no persistence for tests
         config["flush_interval_seconds"] = 9999;
-        // CPF rule
+        // CPF rule (literal pontos/hífen — evita padrões com quantificadores opcionais encadeados em std::regex)
         config["global_rules"][0]["kind"]       = "regex";
-        config["global_rules"][0]["pattern"]    = R"(\b\d{3}\.\d{3}\.\d{3}-\d{2}\b)";
+        config["global_rules"][0]["pattern"]    = R"(\d{3}\.\d{3}\.\d{3}-\d{2})";
         config["global_rules"][0]["tags"][0]    = "pii";
-        // Credit card rule
+        // Cartão: 4x4 dígitos com separador obrigatório (mesmo motivo)
         config["global_rules"][1]["kind"]       = "regex";
-        config["global_rules"][1]["pattern"]    = R"(\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b)";
+        config["global_rules"][1]["pattern"]    = R"(\d{4}[- ]\d{4}[- ]\d{4}[- ]\d{4})";
         config["global_rules"][1]["tags"][0]    = "pci";
         config["shadow_ai"]["enabled"]          = true;
         config["shadow_ai"]["allowed_models_by_tenant"]["acme"][0] = "llama3:8b";
@@ -409,11 +409,4 @@ TEST_F(FinOpsTest, StatsReflectsActivity) {
     plugin.before_request(body, ctx);
     auto s = plugin.stats();
     EXPECT_GE(s["total_requests"].asInt64(), 1);
-}
-
-// ── main ──────────────────────────────────────────────────────────────────────
-
-int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }

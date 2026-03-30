@@ -9,7 +9,7 @@
 
 // RF-35-FUNCIONAL.md — FinOps: governança de custos multi-tenant
 
-struct ModelPricing {
+struct FinOpsModelPricing {
     double input_per_1k  = 0.0;
     double output_per_1k = 0.0;
 };
@@ -67,7 +67,7 @@ private:
     void save_unlocked() const;
     void flush_loop();
 
-    std::unordered_map<std::string, ModelPricing> pricing_;
+    std::unordered_map<std::string, FinOpsModelPricing> pricing_;
 
     mutable std::shared_mutex mtx_;
     // Hierarchical cost nodes: key = "tenant", "tenant:app", "tenant:app:client"

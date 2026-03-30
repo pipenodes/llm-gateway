@@ -1,6 +1,6 @@
 #include "alerting_plugin.h"
-#include "../logger.h"
-#include "../httplib.h"
+#include "logger.h"
+#include "httplib.h"
 #include <json/json.h>
 #include <chrono>
 #include <sstream>

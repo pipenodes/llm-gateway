@@ -1,5 +1,5 @@
 #include "streaming_transformer_plugin.h"
-#include "../logger.h"
+#include "logger.h"
 
 bool StreamingTransformerPlugin::init(const Json::Value& config) {
     collect_metrics_ = config.get("collect_metrics", true).asBool();

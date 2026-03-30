@@ -1,6 +1,6 @@
 #include "adaptive_rate_limiter_plugin.h"
-#include "../logger.h"
-#include "../crypto.h"
+#include "logger.h"
+#include "crypto.h"
 #include <algorithm>
 #include <cmath>
 

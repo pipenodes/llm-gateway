@@ -1,5 +1,5 @@
 #include "response_validator_plugin.h"
-#include "../logger.h"
+#include "logger.h"
 #include <json/json.h>
 
 bool ResponseValidatorPlugin::init(const Json::Value& config) {

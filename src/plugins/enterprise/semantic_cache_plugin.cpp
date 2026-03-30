@@ -1,6 +1,6 @@
 #include "semantic_cache_plugin.h"
-#include "../logger.h"
-#include "../crypto.h"
+#include "logger.h"
+#include "crypto.h"
 #include <algorithm>
 #include <cmath>
 #include <sstream>

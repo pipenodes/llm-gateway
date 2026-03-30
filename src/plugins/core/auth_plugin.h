@@ -1,7 +1,7 @@
 #pragma once
 #include "plugin.h"
-#include "../core_services.h"
-#include "../api_keys.h"
+#include "core_services.h"
+#include "api_keys.h"
 #include <memory>
 
 class AuthPlugin : public Plugin, public core::IAuth {

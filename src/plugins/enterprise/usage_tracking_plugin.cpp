@@ -1,6 +1,6 @@
 #include "usage_tracking_plugin.h"
-#include "../logger.h"
-#include "../crypto.h"
+#include "logger.h"
+#include "crypto.h"
 #include <fstream>
 #include <chrono>
 #include <ctime>
@@ -290,7 +290,8 @@ void UsageTrackingPlugin::flush() {
 
 void UsageTrackingPlugin::flush_loop() {
     while (running_) {
-        std::this_thread::sleep_for(std::chrono::seconds(flush_interval_seconds_));
+        for (int s = 0; s < flush_interval_seconds_ && running_; ++s)
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         if (!running_) break;
         flush();
     }

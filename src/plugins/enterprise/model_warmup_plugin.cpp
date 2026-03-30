@@ -1,7 +1,7 @@
 #include "model_warmup_plugin.h"
-#include "../logger.h"
-#include "../crypto.h"
-#include "../httplib.h"
+#include "logger.h"
+#include "crypto.h"
+#include "httplib.h"
 #include <chrono>
 #include <ctime>
 #include <sstream>

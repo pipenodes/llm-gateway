@@ -1,8 +1,8 @@
 #include "dlp_plugin.h"
 #include "data_discovery_plugin.h"  // for DISCOVERY_TAGS_KEY
-#include "../../tenant_ctx.h"
-#include "../logger.h"
-#include "../crypto.h"
+#include "tenant_ctx.h"
+#include "logger.h"
+#include "crypto.h"
 #include <sstream>
 #include <filesystem>
 
@@ -160,8 +160,6 @@ std::string DLPPlugin::redact_body(Json::Value& body) const {
     int count = 0;
     for (auto& msg : body["messages"]) {
         if (msg.isMember("content") && msg["content"].isString()) {
-            std::string& content = const_cast<std::string&>(msg["content"].asStringRef());
-            // Simple redaction: mark as [REDACTED-BY-DLP]
             msg["content"] = "[REDACTED-BY-DLP]";
             count++;
         }

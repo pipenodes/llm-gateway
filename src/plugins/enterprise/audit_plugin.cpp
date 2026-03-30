@@ -1,5 +1,5 @@
 #include "audit_plugin.h"
-#include "../logger.h"
+#include "logger.h"
 #include <json/json.h>
 #include <fstream>
 #include <chrono>

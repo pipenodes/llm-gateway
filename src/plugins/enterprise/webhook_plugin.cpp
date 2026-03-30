@@ -1,7 +1,7 @@
 #include "webhook_plugin.h"
-#include "../logger.h"
-#include "../crypto.h"
-#include "../httplib.h"
+#include "logger.h"
+#include "crypto.h"
+#include "httplib.h"
 #include <sstream>
 
 WebhookPlugin::~WebhookPlugin() {

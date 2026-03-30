@@ -1,7 +1,7 @@
 #pragma once
 #include "plugin.h"
-#include "../core_services.h"
-#include "../cache.h"
+#include "core_services.h"
+#include "cache.h"
 #include <memory>
 
 class CachePlugin : public Plugin, public core::ICache {

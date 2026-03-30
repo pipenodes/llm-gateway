@@ -1,6 +1,6 @@
 #pragma once
 #include "plugin.h"
-#include "../core_services.h"
+#include "core_services.h"
 #include <unordered_map>
 #include <shared_mutex>
 #include <string>
@@ -8,7 +8,7 @@
 #include <thread>
 #include <atomic>
 
-struct ModelPricing {
+struct CostControllerModelPricing {
     double input_per_1k = 0.0;
     double output_per_1k = 0.0;
 };
@@ -57,7 +57,7 @@ private:
     void save_unlocked() const;
     void flush_loop();
 
-    std::unordered_map<std::string, ModelPricing> pricing_;
+    std::unordered_map<std::string, CostControllerModelPricing> pricing_;
     std::unordered_map<std::string, CostBudget> budgets_;
     mutable std::shared_mutex mtx_;
 

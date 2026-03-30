@@ -1,8 +1,8 @@
 #include "finops_plugin.h"
-#include "../../tenant_ctx.h"
-#include "../logger.h"
-#include "../crypto.h"
-#include "../httplib.h"
+#include "tenant_ctx.h"
+#include "logger.h"
+#include "crypto.h"
+#include "httplib.h"
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -439,7 +439,8 @@ void FinOpsPlugin::save_unlocked() const {
 
 void FinOpsPlugin::flush_loop() {
     while (running_) {
-        std::this_thread::sleep_for(std::chrono::seconds(flush_interval_seconds_));
+        for (int s = 0; s < flush_interval_seconds_ && running_; ++s)
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         if (!running_) break;
         if (dirty_.exchange(false)) {
             std::shared_lock lock(mtx_);

@@ -1,5 +1,5 @@
 #include "prompt_injection_plugin.h"
-#include "../logger.h"
+#include "logger.h"
 #include <sstream>
 #include <string>
 #include <tuple>

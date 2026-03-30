@@ -1,6 +1,6 @@
 #include "prompt_manager_plugin.h"
-#include "../logger.h"
-#include "../crypto.h"
+#include "logger.h"
+#include "crypto.h"
 #include <fstream>
 #include <sstream>
 

@@ -1,5 +1,5 @@
 #include "pii_redaction_plugin.h"
-#include "../logger.h"
+#include "logger.h"
 #include <sstream>
 #include <algorithm>
 #include <vector>

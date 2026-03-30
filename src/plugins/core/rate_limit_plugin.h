@@ -1,7 +1,7 @@
 #pragma once
 #include "plugin.h"
-#include "../core_services.h"
-#include "../rate_limiter.h"
+#include "core_services.h"
+#include "rate_limiter.h"
 
 class RateLimitPlugin : public Plugin, public core::IRateLimiter {
 public:

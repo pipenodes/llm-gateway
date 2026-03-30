@@ -1,7 +1,7 @@
 #include "guardrails_plugin.h"
-#include "../../tenant_ctx.h"
-#include "../logger.h"
-#include "../crypto.h"
+#include "tenant_ctx.h"
+#include "logger.h"
+#include "crypto.h"
 #include <algorithm>
 #include <sstream>
 #include <random>
